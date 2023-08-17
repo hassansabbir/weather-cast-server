@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("weather is forecasting...");
+  res.send("weatherCast is forecasting...");
 });
 
 app.listen(port, () => {
