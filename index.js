@@ -32,6 +32,7 @@ async function run() {
     const teamDetailsCollection = client
       .db("weatherCast")
       .collection("teamDetails");
+    const reviewsCollection = client.db("weatherCast").collection("reviews");
 
     //bannerCollection
 
@@ -51,6 +52,18 @@ async function run() {
 
     app.get("/teamDetails", async (req, res) => {
       const result = await teamDetailsCollection.find().toArray();
+      res.send(result);
+    });
+
+    //reviewsCollection
+
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/reviews", async (req, res) => {
+      const result = await reviewsCollection.insertOne(req.body);
       res.send(result);
     });
 
