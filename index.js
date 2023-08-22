@@ -33,6 +33,7 @@ async function run() {
       .db("weatherCast")
       .collection("teamDetails");
     const reviewsCollection = client.db("weatherCast").collection("reviews");
+    const blogsCollection = client.db("weatherCast").collection("blogs");
 
     //bannerCollection
 
@@ -64,6 +65,13 @@ async function run() {
 
     app.post("/reviews", async (req, res) => {
       const result = await reviewsCollection.insertOne(req.body);
+      res.send(result);
+    });
+
+    //blogCollection
+
+    app.get("/blogs", async (req, res) => {
+      const result = await blogsCollection.find().toArray();
       res.send(result);
     });
 
