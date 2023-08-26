@@ -35,6 +35,7 @@ async function run() {
     const reviewsCollection = client.db("weatherCast").collection("reviews");
     const blogsCollection = client.db("weatherCast").collection("blogs");
     const articlesCollection = client.db("weatherCast").collection("articles");
+    const userCollection = client.db("weatherCast").collection("users");
 
     //bannerCollection
 
@@ -80,6 +81,19 @@ async function run() {
 
     app.get("/articles", async (req, res) => {
       const result = await articlesCollection.find().toArray();
+      res.send(result);
+    });
+
+    //userCollection
+
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
+      const result = await userCollection.insertOne(user);
       res.send(result);
     });
 
