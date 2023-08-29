@@ -91,16 +91,9 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users/admin/:email", async (req, res) => {
+    app.get("/users/:email", async (req, res) => {
       const query = { email: req.params.email };
-      const user = await userCollection.findOne(query);
-      const result = { admin: user?.role === "admin" };
-      res.send(result);
-    });
-    app.get("/users/visitor/:email", async (req, res) => {
-      const query = { email: req.params.email };
-      const user = await userCollection.findOne(query);
-      const result = { seller: user?.role === "visitor" };
+      const result = await userCollection.findOne(query);
       res.send(result);
     });
 
