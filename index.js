@@ -115,12 +115,12 @@ async function run() {
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.patch("/users/visitor/:id", async (req, res) => {
+    app.patch("/users/banned/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          role: "visitor",
+          role: "banned",
         },
       };
       const result = await userCollection.updateOne(filter, updateDoc);
