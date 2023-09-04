@@ -104,6 +104,26 @@ async function run() {
       res.send(result);
     });
 
+    app.put("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const updatedUserData = req.body;
+      const filter = { email: email }; // Filter by email
+      const options = { upsert: true };
+      const updatedUser = {
+        $set: {
+          contact: updatedUserData.contact,
+          address: updatedUserData.address,
+          country: updatedUserData.country,
+        },
+      };
+      const result = await userCollection.updateOne(
+        filter,
+        updatedUser,
+        options
+      );
+      res.send(result);
+    });
+
     app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
