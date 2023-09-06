@@ -84,6 +84,12 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/articles/:email", async (req, res) => {
+      const authorEmail = req.params.email;
+      const result = await articlesCollection.find({ authorEmail }).toArray();
+      res.send(result);
+    });
+
     app.post("/articles", async (req, res) => {
       const newItem = req.body;
       const result = await articlesCollection.insertOne(newItem);
