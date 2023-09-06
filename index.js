@@ -84,6 +84,12 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/articles", async (req, res) => {
+      const newItem = req.body;
+      const result = await articlesCollection.insertOne(newItem);
+      res.send(result);
+    });
+
     app.get("/articles/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
