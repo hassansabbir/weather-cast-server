@@ -36,6 +36,7 @@ async function run() {
     const blogsCollection = client.db("weatherCast").collection("blogs");
     const articlesCollection = client.db("weatherCast").collection("articles");
     const userCollection = client.db("weatherCast").collection("users");
+    const favLocationCollection = client.db("weatherCast").collection("favLocation");
 
     //bannerCollection
 
@@ -180,6 +181,31 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+
+    // Favorite location 
+    app.post("/favLoc", async (req, res) => {
+      const user = req.body ;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
+      const result = await favLocationCollection.insertOne(user);
+      res.send(result);
+    });
+// Add this route to check if a city is a favorite
+app.post("/checkFavorite", async (req, res) => {
+  const location = req.body.location;
+  const query = { location: location };
+  const favorite = await favLocationCollection.findOne(query);
+
+  if (favorite) {
+    res.status(200).send({ message: "City is already a favorite" });
+  } else {
+    res.status(404).send({ message: "City is not a favorite" });
+  }
+});
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
