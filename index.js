@@ -231,6 +231,42 @@ async function run() {
       }
     });
 
+    // Add this route to check if a city is a favorite
+    app.post("/checkFavorite", async (req, res) => {
+      const { email, location } = req.body;
+      const favorite = await favLocationCollection.findOne({ email, location });
+
+      if (favorite) {
+        res.status(200).send({ message: "City is already a favorite" });
+      } else {
+        res.status(404).send({ message: "City is not a favorite" });
+      }
+    });
+
+    // Favorite location
+    app.post("/favLoc", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
+      const result = await favLocationCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // get favorite location
+    app.get("/favLoc", async (req, res) => {
+      const result = await favLocationCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/favLoc/:email", async (req, res) => {
+      const query = { email: req.params.email };
+      const result = await favLocationCollection.findOne(query);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
