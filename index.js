@@ -36,7 +36,9 @@ async function run() {
     const blogsCollection = client.db("weatherCast").collection("blogs");
     const articlesCollection = client.db("weatherCast").collection("articles");
     const userCollection = client.db("weatherCast").collection("users");
-    const favLocationCollection = client.db("weatherCast").collection("favLocation");
+    const favLocationCollection = client
+      .db("weatherCast")
+      .collection("favLocation");
 
     //bannerCollection
 
@@ -88,6 +90,29 @@ async function run() {
     app.get("/articles/:email", async (req, res) => {
       const authorEmail = req.params.email;
       const result = await articlesCollection.find({ authorEmail }).toArray();
+      res.send(result);
+    });
+
+    app.patch("/articles/approve/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await articlesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    app.patch("/articles/denied/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "denied",
+        },
+      };
+      const result = await articlesCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
@@ -182,40 +207,65 @@ async function run() {
       res.send(result);
     });
 
-   
-// Add this route to check if a city is a favorite
-app.post("/checkFavorite", async (req, res) => {
-  const { email, location } = req.body;
-  const favorite = await favLocationCollection.findOne({ email, location });
+    // Favorite location
+    app.post("/favLoc", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
+      const result = await favLocationCollection.insertOne(user);
+      res.send(result);
+    });
+    // Add this route to check if a city is a favorite
+    app.post("/checkFavorite", async (req, res) => {
+      const location = req.body.location;
+      const query = { location: location };
+      const favorite = await favLocationCollection.findOne(query);
 
-  if (favorite) {
-    res.status(200).send({ message: 'City is already a favorite' });
-  } else {
-    res.status(200).send({ message: 'City is not a favorite' });
-  }
-});
+      if (favorite) {
+        res.status(200).send({ message: "City is already a favorite" });
+      } else {
+        res.status(404).send({ message: "City is not a favorite" });
+      }
+    });
 
- // Favorite location 
- app.post("/favLoc", async (req, res) => {
-  const user = req.body ;
-  const query = { email: user.email };
-  const existingUser = await userCollection.findOne(query);
-  if (existingUser) {
-    return res.send({ message: "User already exists" });
-  }
-  const result = await favLocationCollection.insertOne(user);
-  res.send(result);
-});
+    // Add this route to check if a city is a favorite
+    app.post("/checkFavorite", async (req, res) => {
+      const { email, location } = req.body;
+      const favorite = await favLocationCollection.findOne({ email, location });
 
+      if (favorite) {
+        res.status(200).send({ message: "City is already a favorite" });
+      } else {
+        res.status(404).send({ message: "City is not a favorite" });
+      }
+    });
 
-app.get("/favLoc/:email", async (req, res) => {
-  const userEmail = req.params.email;
-  const query = { "favoriteLoc.email": userEmail }; 
-  const cursor = favLocationCollection.find(query);
-  const result = await cursor.toArray();
-  res.send(result);
-});
-   
+    // Favorite location
+    app.post("/favLoc", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
+      const result = await favLocationCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // get favorite location
+    app.get("/favLoc", async (req, res) => {
+      const result = await favLocationCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/favLoc/:email", async (req, res) => {
+      const query = { email: req.params.email };
+      const result = await favLocationCollection.findOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
