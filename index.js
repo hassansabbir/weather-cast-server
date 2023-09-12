@@ -191,7 +191,7 @@ app.post("/checkFavorite", async (req, res) => {
   if (favorite) {
     res.status(200).send({ message: 'City is already a favorite' });
   } else {
-    res.status(404).send({ message: 'City is not a favorite' });
+    res.status(200).send({ message: 'City is not a favorite' });
   }
 });
 
@@ -207,15 +207,12 @@ app.post("/checkFavorite", async (req, res) => {
   res.send(result);
 });
 
-// get favorite location
-app.get("/favLoc", async (req, res) => {
-  const result = await favLocationCollection.find().toArray();
-  res.send(result);
-});
 
 app.get("/favLoc/:email", async (req, res) => {
-  const query = { email: req.params.email };
-  const result = await favLocationCollection.findOne(query);
+  const userEmail = req.params.email;
+  const query = { "favoriteLoc.email": userEmail }; 
+  const cursor = favLocationCollection.find(query);
+  const result = await cursor.toArray();
   res.send(result);
 });
    
