@@ -54,6 +54,13 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/allProductFeatures/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await productFeatureCollection.findOne(query);
+      res.send(result);
+    });
+
     //teamDetailsCollection
 
     app.get("/teamDetails", async (req, res) => {
