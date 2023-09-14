@@ -220,13 +220,15 @@ app.post("/checkFavorite", async (req, res) => {
 
  // Favorite location 
  app.post("/favLoc", async (req, res) => {
-  const user = req.body ;
-  const query = { email: user.email };
-  const existingUser = await userCollection.findOne(query);
-  if (existingUser) {
-    return res.send({ message: "User already exists" });
+  const favoriteLoc = req.body; // Receive the favoriteLoc object from the request body
+  const query = { email: favoriteLoc.email, location: favoriteLoc.location };
+  const existingFavoriteLoc = await favLocationCollection.findOne(query);
+
+  if (existingFavoriteLoc) {
+    return res.send({ message: "Favorite location already exists" });
   }
-  const result = await favLocationCollection.insertOne(user);
+
+  const result = await favLocationCollection.insertOne(favoriteLoc);
   res.send(result);
 });
 
@@ -238,7 +240,8 @@ app.get("/favLoc/:email", async (req, res) => {
   const result = await cursor.toArray();
   res.send(result);
 });
-   
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
