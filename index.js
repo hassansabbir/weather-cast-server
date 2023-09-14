@@ -463,20 +463,23 @@ app.get("/post/:id/comments", async (req, res) => {
     });
 
     // Favorite location
-    app.post("/favLoc", async (req, res) => {
-      const user = req.body;
-      const query = { email: user.email };
-      const existingUser = await userCollection.findOne(query);
-      if (existingUser) {
-        return res.send({ message: "User already exists" });
-      }
-      const result = await favLocationCollection.insertOne(user);
-      res.send(result);
-    });
+  
+ app.post("/favLoc", async (req, res) => {
+  const favoriteLoc = req.body; // Receive the favoriteLoc object from the request body
+  const query = { email: favoriteLoc.email, location: favoriteLoc.location };
+  const existingFavoriteLoc = await favLocationCollection.findOne(query);
+
+  if (existingFavoriteLoc) {
+    return res.send({ message: "Favorite location already exists" });
+  }
+
+  const result = await favLocationCollection.insertOne(favoriteLoc);
+  res.send(result);
+});
 
     app.get("/favLoc/:email", async (req, res) => {
       const userEmail = req.params.email;
-      const query = { "favoriteLoc.email": userEmail };
+      const query = { email: userEmail };
       const cursor = favLocationCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
