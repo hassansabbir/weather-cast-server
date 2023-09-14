@@ -36,7 +36,9 @@ async function run() {
     const blogsCollection = client.db("weatherCast").collection("blogs");
     const articlesCollection = client.db("weatherCast").collection("articles");
     const userCollection = client.db("weatherCast").collection("users");
-    const favLocationCollection = client.db("weatherCast").collection("favLocation");
+    const favLocationCollection = client
+      .db("weatherCast")
+      .collection("favLocation");
 
     //bannerCollection
 
@@ -49,6 +51,13 @@ async function run() {
 
     app.get("/productFeatures", async (req, res) => {
       const result = await productFeatureCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/allProductFeatures/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await productFeatureCollection.findOne(query);
       res.send(result);
     });
 
@@ -205,20 +214,20 @@ async function run() {
       res.send(result);
     });
 
-   
-// Add this route to check if a city is a favorite
-app.post("/checkFavorite", async (req, res) => {
-  const { email, location } = req.body;
-  const favorite = await favLocationCollection.findOne({ email, location });
+    // Add this route to check if a city is a favorite
+    app.post("/checkFavorite", async (req, res) => {
+      const { email, location } = req.body;
+      const favorite = await favLocationCollection.findOne({ email, location });
 
-  if (favorite) {
-    res.status(200).send({ message: "City is already a favorite" });
-  } else {
-    res.status(404).send({ message: "City is not a favorite" });
-  }
-});
+      if (favorite) {
+        res.status(200).send({ message: "City is already a favorite" });
+      } else {
+        res.status(404).send({ message: "City is not a favorite" });
+      }
+    });
 
- // Favorite location 
+    // Favorite location
+  
  app.post("/favLoc", async (req, res) => {
   const favoriteLoc = req.body; // Receive the favoriteLoc object from the request body
   const query = { email: favoriteLoc.email, location: favoriteLoc.location };
@@ -232,16 +241,13 @@ app.post("/checkFavorite", async (req, res) => {
   res.send(result);
 });
 
-
-app.get("/favLoc/:email", async (req, res) => {
-  const userEmail = req.params.email;
-  const query = { "favoriteLoc.email": userEmail }; 
-  const cursor = favLocationCollection.find(query);
-  const result = await cursor.toArray();
-  res.send(result);
-});
-
-
+    app.get("/favLoc/:email", async (req, res) => {
+      const userEmail = req.params.email;
+      const query = { email: userEmail };
+      const cursor = favLocationCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
