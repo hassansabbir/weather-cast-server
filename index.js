@@ -413,17 +413,7 @@ async function run() {
       res.send(result);
     });
 
-    // Add this route to check if a city is a favorite
-    app.post("/checkFavorite", async (req, res) => {
-      const { email, location } = req.body;
-      const favorite = await favLocationCollection.findOne({ email, location });
-
-      if (favorite) {
-        res.status(200).send({ message: "City is already a favorite" });
-      } else {
-        res.status(404).send({ message: "City is not a favorite" });
-      }
-    });
+ 
 
     // Favorite location
 
@@ -449,6 +439,25 @@ async function run() {
       const cursor = favLocationCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    app.delete("/favLoc/:email/:location", async (req, res) => {
+      try {
+        const userEmail = req.params.email;
+        const location = req.params.location;
+        const query = { email: userEmail, location: location };
+    
+        const result = await favLocationCollection.deleteOne(query);
+    
+        if (result.deletedCount === 1) {
+          res.send({ message: "Location removed from favorites" });
+        } else {
+          res.status(404).send({ message: "Location not found in favorites" });
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
     });
 
     // Send a ping to confirm a successful connection
