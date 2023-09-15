@@ -4,15 +4,9 @@ const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
-
-
-
 //middleware
 app.use(cors());
 app.use(express.json());
-
-
-
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@webwizerd.gtwxqnt.mongodb.net/?retryWrites=true&w=majority`;
@@ -143,7 +137,6 @@ async function run() {
       res.send(result);
     });
 
-
     //PostCollection
 
     app.get("/post", async (req, res) => {
@@ -155,8 +148,6 @@ async function run() {
       const result = await postCollection.find().toArray();
       res.send(result);
     });
-    
-    
 
     app.get("/post/:email", async (req, res) => {
       const authorEmail = req.params.email;
@@ -164,17 +155,13 @@ async function run() {
       res.send(result);
     });
 
-   
-  
-
     app.post("/post", async (req, res) => {
       const newItem = req.body;
       newItem.comments = [];
-      
-      try {
 
+      try {
         newItem.createdAt = new Date();
-        
+
         const result = await postCollection.insertOne(newItem);
         res.json({ insertedId: result.insertedId });
       } catch (error) {
@@ -182,30 +169,26 @@ async function run() {
         res.status(500).json({ message: "Internal server error" });
       }
     });
-    
 
     app.get("/post/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const post = await postCollection.findOne(query);
-    
+
       if (!post.comments) {
         post.comments = [];
       }
-    
+
       res.send(post);
     });
-
-
-  
 
     app.delete("/post/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-    
+
       try {
         const result = await postCollection.deleteOne(query);
-    
+
         if (result.deletedCount === 1) {
           res.json({ message: "Post deleted successfully" });
         } else {
@@ -217,21 +200,17 @@ async function run() {
       }
     });
 
-
-   
-    
     app.put("/post/:postId", async (req, res) => {
       const { postId } = req.params;
       const { content } = req.body;
-    
+
       try {
         const query = { _id: new ObjectId(postId) };
         const update = { $set: { content } };
-    
-        const result = await postCollection.updateOne(query, update);
-    
-        if (result.modifiedCount === 1) {
 
+        const result = await postCollection.updateOne(query, update);
+
+        if (result.modifiedCount === 1) {
           const updatedPost = await postCollection.findOne(query);
           return res.status(200).json(updatedPost);
         } else {
@@ -242,135 +221,119 @@ async function run() {
         return res.status(500).json({ message: "Internal Server Error" });
       }
     });
-    
-    
-    
-
 
     //Like
 
-app.post("/post/:id/like", async (req, res) => {
-  const postId = req.params.id;
+    app.post("/post/:id/like", async (req, res) => {
+      const postId = req.params.id;
 
-  try {
+      try {
+        const query = { _id: new ObjectId(postId) };
+        const update = {
+          $inc: { likes: 1 },
+          $set: { likedByCurrentUser: true },
+        };
 
-    const query = { _id: new ObjectId(postId) };
-    const update = {
-      $inc: { likes: 1 },
-      $set: { likedByCurrentUser: true },
-    };
+        const result = await postCollection.updateOne(query, update);
 
-    const result = await postCollection.updateOne(query, update);
+        if (result.modifiedCount === 1) {
+          res.json({ message: "Post liked" });
+        } else {
+          res.status(404).json({ message: "Post not found" });
+        }
+      } catch (error) {
+        console.error("Error liking the post:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
 
-    if (result.modifiedCount === 1) {
-      res.json({ message: "Post liked" });
-    } else {
-      res.status(404).json({ message: "Post not found" });
-    }
-  } catch (error) {
-    console.error("Error liking the post:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+    //unlike
+    app.post("/post/:id/unlike", async (req, res) => {
+      const postId = req.params.id;
 
-//unlike 
-app.post("/post/:id/unlike", async (req, res) => {
-  const postId = req.params.id;
+      try {
+        const query = { _id: new ObjectId(postId) };
+        const update = {
+          $inc: { likes: -1 },
+          $set: { likedByCurrentUser: false },
+        };
 
-  try {
-    
-    const query = { _id: new ObjectId(postId) };
-    const update = {
-      $inc: { likes: -1 },
-      $set: { likedByCurrentUser: false },
-    };
+        const result = await postCollection.updateOne(query, update);
 
-    const result = await postCollection.updateOne(query, update);
+        if (result.modifiedCount === 1) {
+          res.json({ message: "Post unliked" });
+        } else {
+          res.status(404).json({ message: "Post not found" });
+        }
+      } catch (error) {
+        console.error("Error unliking the post:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
 
-    if (result.modifiedCount === 1) {
-      res.json({ message: "Post unliked" });
-    } else {
-      res.status(404).json({ message: "Post not found" });
-    }
-  } catch (error) {
-    console.error("Error unliking the post:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+    // new comment
+    app.post("/post/:id/comment", async (req, res) => {
+      const postId = req.params.id;
+      const { content, userId, userName } = req.body;
 
+      try {
+        const post = await postCollection.findOne({
+          _id: new ObjectId(postId),
+        });
 
+        if (!post) {
+          return res.status(404).json({ message: "Post not found" });
+        }
 
-// new comment
-app.post("/post/:id/comment", async (req, res) => {
-  const postId = req.params.id;
-  const { content, userId, userName } = req.body;
+        if (!post.comments) {
+          post.comments = [];
+        }
 
-  try {
-   
-    const post = await postCollection.findOne({ _id: new ObjectId(postId) });
+        const createdAt = new Date();
+        const newComment = {
+          _id: new ObjectId(),
+          userId,
+          userName,
+          content,
+          createdAt,
+        };
 
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
+        post.comments.push(newComment);
 
-    if (!post.comments) {
-      post.comments = [];
-    }
+        const result = await postCollection.updateOne(
+          { _id: new ObjectId(postId) },
+          { $set: { comments: post.comments } }
+        );
 
-    
-    const createdAt = new Date(); 
-    const newComment = {
-      _id: new ObjectId(),
-      userId,
-      userName,
-      content,
-      createdAt,
-    };
+        if (result.modifiedCount === 1) {
+          res.json({ message: "Comment added" });
+        } else {
+          res.status(500).json({ message: "Error adding comment" });
+        }
+      } catch (error) {
+        console.error("Error adding comment:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
 
-    
-    post.comments.push(newComment);
+    app.get("/post/:id/comments", async (req, res) => {
+      const postId = req.params.id;
 
-    
-    const result = await postCollection.updateOne(
-      { _id: new ObjectId(postId) },
-      { $set: { comments: post.comments } }
-    );
+      try {
+        const post = await postCollection.findOne({
+          _id: new ObjectId(postId),
+        });
 
-    if (result.modifiedCount === 1) {
-      res.json({ message: "Comment added" });
-    } else {
-      res.status(500).json({ message: "Error adding comment" });
-    }
-  } catch (error) {
-    console.error("Error adding comment:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+        if (!post) {
+          return res.status(404).json({ message: "Post not found" });
+        }
 
-
-
-app.get("/post/:id/comments", async (req, res) => {
-  const postId = req.params.id;
-
-  try {
-  
-    const post = await postCollection.findOne({ _id: new ObjectId(postId) });
-
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-   
-    res.json({ comments: post.comments });
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-
-
-
+        res.json({ comments: post.comments });
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
 
     //userCollection
 
@@ -463,19 +426,22 @@ app.get("/post/:id/comments", async (req, res) => {
     });
 
     // Favorite location
-  
- app.post("/favLoc", async (req, res) => {
-  const favoriteLoc = req.body; // Receive the favoriteLoc object from the request body
-  const query = { email: favoriteLoc.email, location: favoriteLoc.location };
-  const existingFavoriteLoc = await favLocationCollection.findOne(query);
 
-  if (existingFavoriteLoc) {
-    return res.send({ message: "Favorite location already exists" });
-  }
+    app.post("/favLoc", async (req, res) => {
+      const favoriteLoc = req.body; // Receive the favoriteLoc object from the request body
+      const query = {
+        email: favoriteLoc.email,
+        location: favoriteLoc.location,
+      };
+      const existingFavoriteLoc = await favLocationCollection.findOne(query);
 
-  const result = await favLocationCollection.insertOne(favoriteLoc);
-  res.send(result);
-});
+      if (existingFavoriteLoc) {
+        return res.send({ message: "Favorite location already exists" });
+      }
+
+      const result = await favLocationCollection.insertOne(favoriteLoc);
+      res.send(result);
+    });
 
     app.get("/favLoc/:email", async (req, res) => {
       const userEmail = req.params.email;
