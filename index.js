@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@webwizerd.gtwxqnt.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -36,6 +36,9 @@ async function run() {
     const blogsCollection = client.db("weatherCast").collection("blogs");
     const articlesCollection = client.db("weatherCast").collection("articles");
     const userCollection = client.db("weatherCast").collection("users");
+    const favLocationCollection = client
+      .db("weatherCast")
+      .collection("favLocation");
 
     //bannerCollection
 
@@ -84,6 +87,48 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/articles/:email", async (req, res) => {
+      const authorEmail = req.params.email;
+      const result = await articlesCollection.find({ authorEmail }).toArray();
+      res.send(result);
+    });
+
+    app.patch("/articles/approve/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await articlesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    app.patch("/articles/denied/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "denied",
+        },
+      };
+      const result = await articlesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.post("/articles", async (req, res) => {
+      const newItem = req.body;
+      const result = await articlesCollection.insertOne(newItem);
+      res.send(result);
+    });
+
+    app.get("/allArticles/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await articlesCollection.findOne(query);
+      res.send(result);
+    });
+
     //userCollection
 
     app.get("/users", async (req, res) => {
@@ -91,16 +136,63 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users/admin/:email", async (req, res) => {
+    app.get("/users/:email", async (req, res) => {
       const query = { email: req.params.email };
-      const user = await userCollection.findOne(query);
-      const result = { admin: user?.role === "admin" };
+      const result = await userCollection.findOne(query);
       res.send(result);
     });
-    app.get("/users/visitor/:email", async (req, res) => {
-      const query = { email: req.params.email };
-      const user = await userCollection.findOne(query);
-      const result = { seller: user?.role === "visitor" };
+
+    app.put("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const updatedUserData = req.body;
+      const filter = { email: email }; // Filter by email
+      const options = { upsert: true };
+      const updatedUser = {
+        $set: {
+          contact: updatedUserData.contact,
+          address: updatedUserData.address,
+          country: updatedUserData.country,
+        },
+      };
+      const result = await userCollection.updateOne(
+        filter,
+        updatedUser,
+        options
+      );
+      res.send(result);
+    });
+
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    app.patch("/users/visitor/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "visitor",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    app.patch("/users/banned/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "banned",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
@@ -112,6 +204,66 @@ async function run() {
         return res.send({ message: "User already exists" });
       }
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // Favorite location
+    app.post("/favLoc", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
+      const result = await favLocationCollection.insertOne(user);
+      res.send(result);
+    });
+    // Add this route to check if a city is a favorite
+    app.post("/checkFavorite", async (req, res) => {
+      const location = req.body.location;
+      const query = { location: location };
+      const favorite = await favLocationCollection.findOne(query);
+
+      if (favorite) {
+        res.status(200).send({ message: "City is already a favorite" });
+      } else {
+        res.status(404).send({ message: "City is not a favorite" });
+      }
+    });
+
+    // Add this route to check if a city is a favorite
+    app.post("/checkFavorite", async (req, res) => {
+      const { email, location } = req.body;
+      const favorite = await favLocationCollection.findOne({ email, location });
+
+      if (favorite) {
+        res.status(200).send({ message: "City is already a favorite" });
+      } else {
+        res.status(404).send({ message: "City is not a favorite" });
+      }
+    });
+
+    // Favorite location
+    app.post("/favLoc", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists" });
+      }
+      const result = await favLocationCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // get favorite location
+    app.get("/favLoc", async (req, res) => {
+      const result = await favLocationCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/favLoc/:email", async (req, res) => {
+      const query = { email: req.params.email };
+      const result = await favLocationCollection.findOne(query);
       res.send(result);
     });
 
