@@ -81,10 +81,39 @@ async function run() {
       res.send(result);
     });
 
-    //blogCollection
+    //blogsCollection
 
+    // search blog by title
+    const indexKey = { title: 1 };
+    const indexOptions = { name: "titleNameIndex" };
+    const result = await blogsCollection.createIndex(indexKey, indexOptions);
+    app.get("/searchBlog/:text", async (req, res) => {
+      const searchText = req.params.text;
+      const result = await blogsCollection
+        .find({
+          $or: [{ title: { $regex: searchText, $options: "i" } }],
+        })
+        .toArray();
+      res.send(result);
+    });
+
+    // pagination
     app.get("/blogs", async (req, res) => {
-      const result = await blogsCollection.find().toArray();
+      const page = parseInt(req.query.page || 1);
+      const perPage = parseInt(req.query.perPage || 6);
+      const skip = (page - 1) * perPage;
+      const blogs = await blogsCollection
+        .find({})
+        .skip(skip)
+        .limit(perPage)
+        .toArray();
+      res.send(blogs);
+    });
+
+    app.get("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.findOne(query);
       res.send(result);
     });
 
