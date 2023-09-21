@@ -527,8 +527,6 @@ async function run() {
         const result = donationCollection.insertOne(completeDonation);
         console.log("Redirecting to: ", GatewayPageURL);
       });
-
-     
     });
 
     app.post("/payment/success/:tranId", async (req, res) => {
