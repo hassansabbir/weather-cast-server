@@ -175,10 +175,7 @@ async function run() {
 
     //PostCollection
 
-    app.get("/post", async (req, res) => {
-      const result = await postCollection.find().toArray();
-      res.send(result);
-    });
+    
 
     app.get("/post", async (req, res) => {
       const result = await postCollection.find().toArray();
@@ -555,7 +552,7 @@ async function run() {
         });
         if(result.modifiedCount > 0){
           res.redirect(
-            `http://localhost:3000/community/Payment`
+            `https://weather-cast-six.vercel.app/community/Payment`
           )
         }
         
@@ -568,7 +565,7 @@ async function run() {
       const existingDonation = await donationCollection.findOne({ tranjectionId: tranId });
       if (existingDonation && existingDonation.paidStatus === true) {
        
-        return res.redirect(`http://localhost:3000/community/Payment`);
+        return res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
       }
     
       
@@ -582,7 +579,7 @@ async function run() {
       );
     
       if (result.modifiedCount >= 0) {
-        res.redirect(`http://localhost:3000/community/Payment`);
+        res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
       } else {
         res.status(404).json({ message: "Donation not found or already marked as failed." });
       }
