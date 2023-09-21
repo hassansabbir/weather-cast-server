@@ -540,7 +540,7 @@ async function run() {
           }
         );
         if (result.modifiedCount > 0) {
-          res.redirect(`http://localhost:3000/community/Payment`);
+          res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
         }
       });
 
@@ -551,7 +551,9 @@ async function run() {
           tranjectionId: tranId,
         });
         if (existingDonation && existingDonation.paidStatus === true) {
-          return res.redirect(`http://localhost:3000/community/Payment`);
+          return res.redirect(
+            `https://weather-cast-six.vercel.app/community/Payment`
+          );
         }
 
         const result = await donationCollection.updateOne(
@@ -564,13 +566,11 @@ async function run() {
         );
 
         if (result.modifiedCount >= 0) {
-          res.redirect(`http://localhost:3000/community/Payment`);
+          res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
         } else {
-          res
-            .status(404)
-            .json({
-              message: "Donation not found or already marked as failed.",
-            });
+          res.status(404).json({
+            message: "Donation not found or already marked as failed.",
+          });
         }
       });
     });
