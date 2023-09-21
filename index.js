@@ -413,8 +413,6 @@ async function run() {
       res.send(result);
     });
 
- 
-
     // Favorite location
 
     app.post("/favLoc", async (req, res) => {
@@ -446,9 +444,9 @@ async function run() {
         const userEmail = req.params.email;
         const location = req.params.location;
         const query = { email: userEmail, location: location };
-    
+
         const result = await favLocationCollection.deleteOne(query);
-    
+
         if (result.deletedCount === 1) {
           res.send({ message: "Location removed from favorites" });
         } else {
