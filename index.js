@@ -528,51 +528,53 @@ async function run() {
         console.log("Redirecting to: ", GatewayPageURL);
       });
 
-      app.post("/payment/success/:tranId", async (req, res) => {
-        console.log(req.params.tranId);
+     
+    });
 
-        const result = await donationCollection.updateOne(
-          { tranjectionId: req.params.tranId },
-          {
-            $set: {
-              paidStatus: true,
-            },
-          }
-        );
-        if (result.modifiedCount > 0) {
-          res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
+    app.post("/payment/success/:tranId", async (req, res) => {
+      console.log(req.params.tranId);
+
+      const result = await donationCollection.updateOne(
+        { tranjectionId: req.params.tranId },
+        {
+          $set: {
+            paidStatus: true,
+          },
         }
+      );
+      if (result.modifiedCount > 0) {
+        res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
+      }
+    });
+
+    app.post("/payment/fail/:tranId", async (req, res) => {
+      const tranId = req.params.tranId;
+
+      const existingDonation = await donationCollection.findOne({
+        tranjectionId: tranId,
       });
+      if (existingDonation && existingDonation.paidStatus === true) {
+        return res.redirect(
+          `https://weather-cast-six.vercel.app/community/Payment`
+        );
+      }
 
-      app.post("/payment/fail/:tranId", async (req, res) => {
-        const tranId = req.params.tranId;
+      const result = await donationCollection.updateOne(
+        { tranjectionId: tranId },
+        {
+          $set: {
+            paidStatus: false,
+          },
+        }
+      );
 
-        const existingDonation = await donationCollection.findOne({
-          tranjectionId: tranId,
+      if (result.modifiedCount >= 0) {
+        res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
+      } else {
+        res.status(404).json({
+          message: "Donation not found or already marked as failed.",
         });
-        if (existingDonation && existingDonation.paidStatus === true) {
-          return res.redirect(
-            `https://weather-cast-six.vercel.app/community/Payment`
-          );
-        }
-
-        const result = await donationCollection.updateOne(
-          { tranjectionId: tranId },
-          {
-            $set: {
-              paidStatus: false,
-            },
-          }
-        );
-
-        if (result.modifiedCount >= 0) {
-          res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
-        } else {
-          res.status(404).json({
-            message: "Donation not found or already marked as failed.",
-          });
-        }
-      });
+      }
     });
 
     app.get("/payment/success", async (req, res) => {
