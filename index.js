@@ -588,7 +588,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("weather is forecasting...");
+  res.send("weatherCast is forecasting...");
 });
 
 app.listen(port, () => {
