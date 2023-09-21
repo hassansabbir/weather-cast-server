@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const SSLCommerzPayment = require('sslcommerz-lts')
+const SSLCommerzPayment = require("sslcommerz-lts");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
@@ -21,11 +21,9 @@ const client = new MongoClient(uri, {
   },
 });
 
-
 const store_id = process.env.DONATION_PAYMENT_ID;
-const store_passwd = process.env.DONATION_PAYMENT_PASS
-const is_live = false 
-
+const store_passwd = process.env.DONATION_PAYMENT_PASS;
+const is_live = false;
 
 async function run() {
   try {
@@ -174,8 +172,6 @@ async function run() {
     });
 
     //PostCollection
-
-    
 
     app.get("/post", async (req, res) => {
       const result = await postCollection.find().toArray();
@@ -472,22 +468,16 @@ async function run() {
       res.send(result);
     });
 
+    const donationCollection = client.db("weatherCast").collection("donation");
 
-    const donationCollection = client
-      .db("weatherCast")
-      .collection("donation");
+    const tran_id = new ObjectId().toString();
 
+    app.post("/donation", async (req, res) => {
+      const { donationAmount, displayName, email } = req.body;
 
-      const tran_id = new ObjectId().toString();
-
-
-      app.post("/donation", async (req, res) => {
-       
-        const { donationAmount, displayName, email } = req.body;
-      
-        // console.log("Donation Amount:", donationAmount);
-        // console.log("Display Name:", displayName);
-        // console.log("Email:", email);
+      // console.log("Donation Amount:", donationAmount);
+      // console.log("Display Name:", displayName);
+      // console.log("Email:", email);
 
       const data = {
         total_amount: donationAmount,
@@ -503,100 +493,96 @@ async function run() {
         product_profile: 'general',
         cus_name: displayName,
         cus_email: email,
-        cus_add1: 'Dhaka',
-        cus_add2: 'Dhaka',
-        cus_city: 'Dhaka',
-        cus_state: 'Dhaka',
-        cus_postcode: '1000',
-        cus_country: 'Bangladesh',
-        cus_phone: '01711111111',
-        cus_fax: '01711111111',
-        ship_name: 'Customer Name',
-        ship_add1: 'Dhaka',
-        ship_add2: 'Dhaka',
-        ship_city: 'Dhaka',
-        ship_state: 'Dhaka',
+        cus_add1: "Dhaka",
+        cus_add2: "Dhaka",
+        cus_city: "Dhaka",
+        cus_state: "Dhaka",
+        cus_postcode: "1000",
+        cus_country: "Bangladesh",
+        cus_phone: "01711111111",
+        cus_fax: "01711111111",
+        ship_name: "Customer Name",
+        ship_add1: "Dhaka",
+        ship_add2: "Dhaka",
+        ship_city: "Dhaka",
+        ship_state: "Dhaka",
         ship_postcode: 1000,
-        ship_country: 'Bangladesh',
-    };
-    console.log(data);
-    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
-    sslcz.init(data).then(apiResponse => {
-      
-
-        let GatewayPageURL = apiResponse.GatewayPageURL
-        res.send({url:GatewayPageURL});
+        ship_country: "Bangladesh",
+      };
+      console.log(data);
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+      sslcz.init(data).then((apiResponse) => {
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.send({ url: GatewayPageURL });
 
         const completeDonation = {
-          donationAmount, 
-          displayName,    
-          email,          
+          donationAmount,
+          displayName,
+          email,
           paidStatus: false,
           tranjectionId: tran_id,
           paymentTime: new Date(),
         };
 
         const result = donationCollection.insertOne(completeDonation);
-        console.log('Redirecting to: ', GatewayPageURL)
-    });
+        console.log("Redirecting to: ", GatewayPageURL);
+      });
 
-    app.post("/payment/success/:tranId", async (req, res) => {
-      console.log(req.params.tranId);
+      app.post("/payment/success/:tranId", async (req, res) => {
+        console.log(req.params.tranId);
 
-      const result = await donationCollection.updateOne(
-        {tranjectionId: req.params.tranId},
-        {
-          $set: {
-            paidStatus: true,
-          },
+        const result = await donationCollection.updateOne(
+          { tranjectionId: req.params.tranId },
+          {
+            $set: {
+              paidStatus: true,
+            },
+          }
+        );
+        if (result.modifiedCount > 0) {
+          res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
+        }
+      });
+
+      app.post("/payment/fail/:tranId", async (req, res) => {
+        const tranId = req.params.tranId;
+
+        const existingDonation = await donationCollection.findOne({
+          tranjectionId: tranId,
         });
-        if(result.modifiedCount > 0){
-          res.redirect(
+        if (existingDonation && existingDonation.paidStatus === true) {
+          return res.redirect(
             `https://weather-cast-six.vercel.app/community/Payment`
-          )
+          );
         }
-        
-    });
 
-    app.post("/payment/fail/:tranId", async (req, res) => {
-      const tranId = req.params.tranId;
-    
-      
-      const existingDonation = await donationCollection.findOne({ tranjectionId: tranId });
-      if (existingDonation && existingDonation.paidStatus === true) {
-       
-        return res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
-      }
-    
-      
-      const result = await donationCollection.updateOne(
-        { tranjectionId: tranId },
-        {
-          $set: {
-            paidStatus: false,
-          },
+        const result = await donationCollection.updateOne(
+          { tranjectionId: tranId },
+          {
+            $set: {
+              paidStatus: false,
+            },
+          }
+        );
+
+        if (result.modifiedCount >= 0) {
+          res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
+        } else {
+          res.status(404).json({
+            message: "Donation not found or already marked as failed.",
+          });
         }
-      );
-    
-      if (result.modifiedCount >= 0) {
-        res.redirect(`https://weather-cast-six.vercel.app/community/Payment`);
-      } else {
-        res.status(404).json({ message: "Donation not found or already marked as failed." });
-      }
+      });
     });
-    
-    
-
-    })
 
     app.get("/payment/success", async (req, res) => {
       try {
-       
-        const successfulPayments = await donationCollection.find({ paidStatus: true }).toArray();
-    
-        console.log("Successful Payments:", successfulPayments); 
-    
-       
+        const successfulPayments = await donationCollection
+          .find({ paidStatus: true })
+          .toArray();
+
+        console.log("Successful Payments:", successfulPayments);
+
         res.json(successfulPayments);
       } catch (error) {
         console.error("Error retrieving successful payments:", error);
@@ -607,8 +593,10 @@ async function run() {
     app.get("/payment/success/:email", async (req, res) => {
       try {
         const authorEmail = req.params.email;
-        const result = await donationCollection.find({ email: authorEmail }).toArray();
-    
+        const result = await donationCollection
+          .find({ email: authorEmail })
+          .toArray();
+
         if (result) {
           res.json(result);
         } else {
@@ -620,12 +608,12 @@ async function run() {
       }
     });
 
-
     app.get("/payment/fail", async (req, res) => {
       try {
-        
-        const failPayments = await donationCollection.find({ paidStatus: false }).toArray();
-    
+        const failPayments = await donationCollection
+          .find({ paidStatus: false })
+          .toArray();
+
         console.log("Fail Payments:", failPayments);
 
         res.json(failPayments);
@@ -638,8 +626,10 @@ async function run() {
     app.get("/payment/fail/:email", async (req, res) => {
       try {
         const authorEmail = req.params.email;
-        const result = await donationCollection.find({ email: authorEmail }).toArray();
-    
+        const result = await donationCollection
+          .find({ email: authorEmail })
+          .toArray();
+
         if (result) {
           res.json(result);
         } else {
@@ -651,24 +641,20 @@ async function run() {
       }
     });
 
-
     app.get("/payment", async (req, res) => {
       try {
-       
-        const successfulPayments = await donationCollection.find({ paidStatus: true, paidStatus: false }).toArray();
-    
-        console.log("Successful Payments:", successfulPayments); 
-    
-       
+        const successfulPayments = await donationCollection
+          .find({ paidStatus: true, paidStatus: false })
+          .toArray();
+
+        console.log("Successful Payments:", successfulPayments);
+
         res.json(successfulPayments);
       } catch (error) {
         console.error("Error retrieving successful payments:", error);
         res.status(500).json({ error: "Internal Server Error" });
       }
     });
-    
-    
-
 
     app.delete("/favLoc/:email/:location", async (req, res) => {
       try {
@@ -702,7 +688,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("weather is forecasting...");
+  res.send("weatherCast is forecasting...");
 });
 
 app.listen(port, () => {
