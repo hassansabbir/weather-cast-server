@@ -367,6 +367,12 @@ async function run() {
     });
 
     //userCollection
+
+    app.get("/allUsers", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
     // user pagination
     app.get("/users", async (req, res) => {
       const page = parseInt(req.query.page || 1);
