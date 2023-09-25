@@ -97,7 +97,7 @@ async function run() {
       res.send(result);
     });
 
-    // pagination
+    // blog pagination
     app.get("/blogs", async (req, res) => {
       const page = parseInt(req.query.page || 1);
       const perPage = parseInt(req.query.perPage || 6);
@@ -110,6 +110,7 @@ async function run() {
       res.send(blogs);
     });
 
+    // blog detail
     app.get("/blogs/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -365,10 +366,17 @@ async function run() {
     });
 
     //userCollection
-
+    // user pagination
     app.get("/users", async (req, res) => {
-      const result = await userCollection.find().toArray();
-      res.send(result);
+      const page = parseInt(req.query.page || 1);
+      const perPage = parseInt(req.query.perPage || 10);
+      const skip = (page - 1) * perPage;
+      const users = await userCollection
+        .find({})
+        .skip(skip)
+        .limit(perPage)
+        .toArray();
+      res.send(users);
     });
 
     app.get("/users/:email", async (req, res) => {
