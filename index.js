@@ -28,7 +28,7 @@ const is_live = false;
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    client.connect();
 
     const bannerCollection = client.db("weatherCast").collection("banners");
     const productFeatureCollection = client
@@ -45,6 +45,7 @@ async function run() {
     const favLocationCollection = client
       .db("weatherCast")
       .collection("favLocation");
+    const donationCollection = client.db("weatherCast").collection("donation");
 
     //bannerCollection
 
@@ -366,6 +367,12 @@ async function run() {
     });
 
     //userCollection
+
+    app.get("/allUsers", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
     // user pagination
     app.get("/users", async (req, res) => {
       const page = parseInt(req.query.page || 1);
@@ -475,8 +482,6 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
-
-    const donationCollection = client.db("weatherCast").collection("donation");
 
     const tran_id = new ObjectId().toString();
 
